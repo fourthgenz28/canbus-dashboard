@@ -1,4 +1,5 @@
 const { app, BrowserWindow, Menu, shell } = require('electron');
+const config = require('./config');
 
 let menu;
 let template;
@@ -41,8 +42,8 @@ app.on('ready', () =>
   .then(() => {
   mainWindow = new BrowserWindow({
     show: false,
-    width: 1024,
-    height: 728
+    width: config.viewWidth,
+    height: config.viewHeight
   });
 
   mainWindow.loadURL(`file://${__dirname}/app.html`);
