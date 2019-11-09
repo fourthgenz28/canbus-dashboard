@@ -1,0 +1,11 @@
+@font-face {
+  font-family: 'ChangaOne';
+  src: local('ChangaOne'), url(../../fonts/changa_one/ChangaOne-Italic.ttf) format('truetype');
+}
+
+.GasPedalPosition {
+  font-family: ChangaOne;
+  font-size: 1em;
+  text-align: center;
+  }
+  

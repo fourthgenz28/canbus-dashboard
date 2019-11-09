@@ -1,0 +1,21 @@
+@font-face {
+  font-family: 'ChangaOne';
+  src: local('ChangaOne'), url(../fonts/changa_one/ChangaOne-Italic.ttf) format('truetype');
+}
+
+.MainPanel {
+  font-family: ChangaOne;
+  font-size: 1em;
+  color: #fff;
+  text-align: center;
+}
+
+.error{
+  z-index: 9999;
+  position: absolute;
+  top: 120px;
+  left: 250px;
+  padding: 4px;
+  border: 1px solid #fff;
+  background-color: #000;
+}

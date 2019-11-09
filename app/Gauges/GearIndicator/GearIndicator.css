@@ -1,0 +1,27 @@
+.gear-indicator {
+  font-family: ChangaOne;
+  font-size: 1.25em;
+  text-align: left;
+  width: 40px;
+}
+
+.circle {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  float: right;
+  margin-top: 6px;
+}
+
+.green {
+  background: #090;
+}
+
+.red{
+  background: #f00;
+}
+
+.subscript{
+  font-size: .85em;
+}
+  

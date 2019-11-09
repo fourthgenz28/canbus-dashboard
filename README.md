@@ -1,22 +1,15 @@
-# electron-react-typescript-boilerplate
+# canbus-dashboard
 
 [![Build Status][travis-image]][travis-url]
-[![Greenkeeper badge](https://badges.greenkeeper.io/iRath96/electron-react-typescript-boilerplate.svg)](https://greenkeeper.io/)
-
-This is a slight modificiation of the great [electron-react-boilerplate](https://github.com/chentsulin/electron-react-boilerplate) by chentsulin.
-Instead of [Babel](https://babeljs.io) and [flow](https://flowtype.org) this version uses [TypeScript](https://www.typescriptlang.org). Support for [Sass](http://sass-lang.com) has also been added.
+[![Greenkeeper badge](https://badges.greenkeeper.io/fourthgenz28/canbus-dashboard.svg)](https://greenkeeper.io/)
 
 # electron-react-boilerplate
 
-![](./erb-logo.png)
-
-> Live editing development on desktop app
-
-[Electron](http://electron.atom.io/) application boilerplate based on [React](https://facebook.github.io/react/), [Redux](https://github.com/reactjs/redux), [React Router](https://github.com/reactjs/react-router), [Webpack](http://webpack.github.io/docs/), [React Transform HMR](https://github.com/gaearon/react-transform-hmr) for rapid application development
+![](./canbus-dashboard-logo.png)
 
 ## Screenshot
 
-![Electron Boilerplate Demo](https://cloud.githubusercontent.com/assets/3382565/10557547/b1f07a4e-74e3-11e5-8d27-79ab6947d429.gif)
+![Canbus Dashboard Demo](https://cloud.githubusercontent.com/assets/3382565/10557547/b1f07a4e-74e3-11e5-8d27-79ab6947d429.gif)
 
 ## Install
 
@@ -26,7 +19,7 @@ Instead of [Babel](https://babeljs.io) and [flow](https://flowtype.org) this ver
 First, clone the repo via git:
 
 ```bash
-git clone https://github.com/iRath96/electron-react-typescript-boilerplate.git your-project-name
+git clone https://github.com/fourthgenz28/canbus-dashboard.git your-project-name
 ```
 
 And then install dependencies.
@@ -35,8 +28,6 @@ And then install dependencies.
 ```bash
 $ cd your-project-name && npm install
 ```
-
-:bulb: *In order to remove boilerplate sample code, simply run `npm run cleanup`. After this is run, the initial sample boilerplate code will be removed in order for a clean project for starting custom dev*
 
 ## Run
 
@@ -50,35 +41,8 @@ $ npm run start-hot
 or run two servers with one command
 
 ```bash
-$ npm run dev
+$ yarn dev
 ```
-
-## Editor Configuration
-**Atom**
-```bash
-apm install editorconfig es6-javascript atom-ternjs javascript-snippets linter linter-eslint language-babel autocomplete-modules
-```
-
-**Sublime**
-* https://github.com/sindresorhus/editorconfig-sublime#readme
-* https://github.com/SublimeLinter/SublimeLinter3
-* https://github.com/roadhump/SublimeLinter-eslint
-* https://github.com/babel/babel-sublime
-
-**Others**
-* [Editorconfig](http://editorconfig.org/#download)
-* [ESLint](http://eslint.org/docs/user-guide/integrations#editors)
-* Babel Syntax Plugin
-
-## DevTools
-
-#### Toggle Chrome DevTools
-
-- OS X: <kbd>Cmd</kbd> <kbd>Alt</kbd> <kbd>I</kbd> or <kbd>F12</kbd>
-- Linux: <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>I</kbd> or <kbd>F12</kbd>
-- Windows: <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>I</kbd> or <kbd>F12</kbd>
-
-*See [electron-debug](https://github.com/sindresorhus/electron-debug) for more information.*
 
 #### DevTools extension
 

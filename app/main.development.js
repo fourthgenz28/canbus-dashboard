@@ -1,9 +1,62 @@
-const { app, BrowserWindow, Menu, shell } = require('electron');
-const config = require('./config');
+const { app, BrowserWindow, ipcMain, shell } = require('electron');
+const path = require('path'); // eslint-disable-line
+const config = require(path.join(__dirname, 'config.json'));
+const can = require('socketcan');
 
-let menu;
-let template;
+const vehicle = require('./Vehicles/honda-civic-gen8');
+const Obd2 = require('./OBD2/obd2');
+
+let channel;
+let interval = new Array;
 let mainWindow = null;
+
+function createChannel() {
+  try{
+      console.log('Attempting to open channel at can0');
+      channel = can.createRawChannel('can0', true);
+      if(channel){ return channel; }
+  }catch(e){ console.error(e); }
+
+  try{
+      console.log('Attempting to open channel at vcan0');
+      channel = can.createRawChannel('vcan0', true);
+      if(channel){ return channel; }
+  }catch(e){
+    console.error(e);
+    return channel;
+  }
+
+  channel.addListener('onMessage', (msg) => {
+      const hexValue = msg.id.toString(16);
+      if(msg.id === 2024 || //7E8
+         msg.id === 417001745){ // 18DAF111
+          const obdChannel = 'obd-response-' + msg.data[2];
+          const decodedValue = Obd2.service(1).pid(msg.data[2]).decode(msg.data);
+          mainWindow.webContents.send(obdChannel, decodedValue);
+      }else{
+          const targets = vehicle.msgIdMappings[hexValue];
+          if(targets){
+              targets.forEach(target => {
+                  const mapping = vehicle.valueMappings[target];
+                  if(mapping){
+                      mainWindow.webContents.send(target, mapping(msg.data));
+                  }
+              });
+          }
+      }
+  });
+  channel.start();
+}
+
+function launchScanner() {
+  vehicle.obdQueries.forEach((q, i) => {
+      interval.push(setInterval(() => {
+          if(channel){
+              channel.send(Obd2.createRequest(q.pid, 1, vehicle.obdConfig.extendedFrames || false))
+          }
+      }, q.frequency));
+  });
+}
 
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support'); // eslint-disable-line
@@ -12,15 +65,14 @@ if (process.env.NODE_ENV === 'production') {
 
 if (process.env.NODE_ENV === 'development') {
   require('electron-debug')(); // eslint-disable-line global-require
-  const path = require('path'); // eslint-disable-line
   const p = path.join(__dirname, '..', 'app', 'node_modules'); // eslint-disable-line
   require('module').globalPaths.push(p); // eslint-disable-line
 }
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
+  if (process.platform !== 'darwin') { app.quit(); }
+  if(channel){ channel.stop(); }
 });
-
 
 const installExtensions = () => {
   if (process.env.NODE_ENV === 'development') {
@@ -41,6 +93,8 @@ app.on('ready', () =>
   installExtensions()
   .then(() => {
   mainWindow = new BrowserWindow({
+    backgroundColor: '#000',
+    frame: true,
     show: false,
     width: config.viewWidth,
     height: config.viewHeight
@@ -48,9 +102,15 @@ app.on('ready', () =>
 
   mainWindow.loadURL(`file://${__dirname}/app.html`);
 
+  createChannel();
+  launchScanner();
+
   mainWindow.webContents.on('did-finish-load', () => {
     mainWindow.show();
     mainWindow.focus();
+    if(channel === null){
+      mainWindow.webContents.send('canbus-channel-null', null);
+    }
   });
 
   mainWindow.on('closed', () => {
@@ -59,215 +119,5 @@ app.on('ready', () =>
 
   if (process.env.NODE_ENV === 'development') {
     mainWindow.openDevTools();
-    mainWindow.webContents.on('context-menu', (e, props) => {
-      const { x, y } = props;
-
-      Menu.buildFromTemplate([{
-        label: 'Inspect element',
-        click() {
-          mainWindow.inspectElement(x, y);
-        }
-      }]).popup(mainWindow);
-    });
-  }
-
-  if (process.platform === 'darwin') {
-    template = [{
-      label: 'Electron',
-      submenu: [{
-        label: 'About ElectronReact',
-        selector: 'orderFrontStandardAboutPanel:'
-      }, {
-        type: 'separator'
-      }, {
-        label: 'Services',
-        submenu: []
-      }, {
-        type: 'separator'
-      }, {
-        label: 'Hide ElectronReact',
-        accelerator: 'Command+H',
-        selector: 'hide:'
-      }, {
-        label: 'Hide Others',
-        accelerator: 'Command+Shift+H',
-        selector: 'hideOtherApplications:'
-      }, {
-        label: 'Show All',
-        selector: 'unhideAllApplications:'
-      }, {
-        type: 'separator'
-      }, {
-        label: 'Quit',
-        accelerator: 'Command+Q',
-        click() {
-          app.quit();
-        }
-      }]
-    }, {
-      label: 'Edit',
-      submenu: [{
-        label: 'Undo',
-        accelerator: 'Command+Z',
-        selector: 'undo:'
-      }, {
-        label: 'Redo',
-        accelerator: 'Shift+Command+Z',
-        selector: 'redo:'
-      }, {
-        type: 'separator'
-      }, {
-        label: 'Cut',
-        accelerator: 'Command+X',
-        selector: 'cut:'
-      }, {
-        label: 'Copy',
-        accelerator: 'Command+C',
-        selector: 'copy:'
-      }, {
-        label: 'Paste',
-        accelerator: 'Command+V',
-        selector: 'paste:'
-      }, {
-        label: 'Select All',
-        accelerator: 'Command+A',
-        selector: 'selectAll:'
-      }]
-    }, {
-      label: 'View',
-      submenu: (process.env.NODE_ENV === 'development') ? [{
-        label: 'Reload',
-        accelerator: 'Command+R',
-        click() {
-          mainWindow.webContents.reload();
-        }
-      }, {
-        label: 'Toggle Full Screen',
-        accelerator: 'Ctrl+Command+F',
-        click() {
-          mainWindow.setFullScreen(!mainWindow.isFullScreen());
-        }
-      }, {
-        label: 'Toggle Developer Tools',
-        accelerator: 'Alt+Command+I',
-        click() {
-          mainWindow.toggleDevTools();
-        }
-      }] : [{
-        label: 'Toggle Full Screen',
-        accelerator: 'Ctrl+Command+F',
-        click() {
-          mainWindow.setFullScreen(!mainWindow.isFullScreen());
-        }
-      }]
-    }, {
-      label: 'Window',
-      submenu: [{
-        label: 'Minimize',
-        accelerator: 'Command+M',
-        selector: 'performMiniaturize:'
-      }, {
-        label: 'Close',
-        accelerator: 'Command+W',
-        selector: 'performClose:'
-      }, {
-        type: 'separator'
-      }, {
-        label: 'Bring All to Front',
-        selector: 'arrangeInFront:'
-      }]
-    }, {
-      label: 'Help',
-      submenu: [{
-        label: 'Learn More',
-        click() {
-          shell.openExternal('http://electron.atom.io');
-        }
-      }, {
-        label: 'Documentation',
-        click() {
-          shell.openExternal('https://github.com/atom/electron/tree/master/docs#readme');
-        }
-      }, {
-        label: 'Community Discussions',
-        click() {
-          shell.openExternal('https://discuss.atom.io/c/electron');
-        }
-      }, {
-        label: 'Search Issues',
-        click() {
-          shell.openExternal('https://github.com/atom/electron/issues');
-        }
-      }]
-    }];
-
-    menu = Menu.buildFromTemplate(template);
-    Menu.setApplicationMenu(menu);
-  } else {
-    template = [{
-      label: '&File',
-      submenu: [{
-        label: '&Open',
-        accelerator: 'Ctrl+O'
-      }, {
-        label: '&Close',
-        accelerator: 'Ctrl+W',
-        click() {
-          mainWindow.close();
-        }
-      }]
-    }, {
-      label: '&View',
-      submenu: (process.env.NODE_ENV === 'development') ? [{
-        label: '&Reload',
-        accelerator: 'Ctrl+R',
-        click() {
-          mainWindow.webContents.reload();
-        }
-      }, {
-        label: 'Toggle &Full Screen',
-        accelerator: 'F11',
-        click() {
-          mainWindow.setFullScreen(!mainWindow.isFullScreen());
-        }
-      }, {
-        label: 'Toggle &Developer Tools',
-        accelerator: 'Alt+Ctrl+I',
-        click() {
-          mainWindow.toggleDevTools();
-        }
-      }] : [{
-        label: 'Toggle &Full Screen',
-        accelerator: 'F11',
-        click() {
-          mainWindow.setFullScreen(!mainWindow.isFullScreen());
-        }
-      }]
-    }, {
-      label: 'Help',
-      submenu: [{
-        label: 'Learn More',
-        click() {
-          shell.openExternal('http://electron.atom.io');
-        }
-      }, {
-        label: 'Documentation',
-        click() {
-          shell.openExternal('https://github.com/atom/electron/tree/master/docs#readme');
-        }
-      }, {
-        label: 'Community Discussions',
-        click() {
-          shell.openExternal('https://discuss.atom.io/c/electron');
-        }
-      }, {
-        label: 'Search Issues',
-        click() {
-          shell.openExternal('https://github.com/atom/electron/issues');
-        }
-      }]
-    }];
-    menu = Menu.buildFromTemplate(template);
-    mainWindow.setMenu(menu);
   }
 }));
